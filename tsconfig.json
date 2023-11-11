@@ -3,7 +3,6 @@
 		"types": ["node"],
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"moduleResolution": "NodeNext",
 		"lib": ["ES2022"],
 		"noUnusedLocals": true,
 		"noEmitOnError": false,
@@ -11,7 +10,7 @@
 		"forceConsistentCasingInFileNames": true,
 		"strict": true,
 		"target": "ES2022",
-		"module": "NodeNext",
+		"module": "CommonJS",
 		"outDir": "dist",
 		"rootDir": "."
 	},

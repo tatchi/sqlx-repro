@@ -1,12 +1,7 @@
-import path, { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import * as Migrator from '@sqlfx/sqlite/Migrator/Node';
 import { makeLayer } from '@sqlfx/sqlite/node';
 import { Cause, Config, Effect, Exit, Layer, pipe, Console } from 'effect';
-
-const __filename = fileURLToPath(import.meta.url);
-
-const __dirname = path.dirname(__filename);
 
 const db_path = resolve(__dirname, '../test.sqlite3');
 
