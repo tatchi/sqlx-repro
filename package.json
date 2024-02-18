@@ -2,16 +2,17 @@
 	"license": "MIT",
 	"type": "module",
 	"devDependencies": {
-		"@types/node": "^20.9.0",
-		"typescript": "^5.2.2"
+		"@types/node": "^20.11.19",
+		"tsx": "^4.7.1",
+		"typescript": "^5.3.3"
 	},
 	"scripts": {
 		"build": "rm -rf ./dist && tsc && cp ./test.sqlite3 ./dist/test.sqlite3"
 	},
 	"dependencies": {
-		"@effect/schema": "^0.47.4",
-		"@sqlfx/sqlite": "^0.30.3",
-		"better-sqlite3": "^9.1.1",
-		"effect": "2.0.0-next.54"
+		"@effect/schema": "^0.62.8",
+		"@sqlfx/sqlite": "^0.44.1",
+		"better-sqlite3": "^9.4.1",
+		"effect": "2.3.7"
 	}
 }

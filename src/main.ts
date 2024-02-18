@@ -1,36 +1,82 @@
-import path, { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import * as Migrator from '@sqlfx/sqlite/Migrator/Node';
-import { makeLayer } from '@sqlfx/sqlite/node';
-import { Cause, Config, Effect, Exit, Layer, pipe, Console } from 'effect';
+#!/usr/bin/env node --no-warnings --experimental-specifier-resolution=node --import=tsx/esm
+import {
+	Cause,
+	Context,
+	Effect,
+	Exit,
+	Option,
+	ReadonlyArray,
+	pipe,
+} from 'effect';
+import * as Path from 'node:path';
+import * as Url from 'node:url';
+import * as S from '@effect/schema/Schema';
+import * as Sql from '@sqlfx/sqlite/node';
+import { Config, Layer } from 'effect';
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = Url.fileURLToPath(import.meta.url);
 
-const __dirname = path.dirname(__filename);
+const __dirname = Path.dirname(__filename);
 
-const db_path = resolve(__dirname, '../test.sqlite3');
+const db_path = Path.resolve(__dirname, '../test.sqlite3');
 
-const SqliteLive = makeLayer({
+export const SqlLive = Sql.makeLayer({
 	filename: Config.succeed(db_path),
+}).pipe(Layer.orDie);
+
+export class UserDbo extends S.Class<UserDbo>()({
+	id: S.number,
+	name: S.string,
+}) {}
+
+const make = Effect.gen(function* (_) {
+	const sql = yield* _(Sql.tag);
+
+	const GetById = sql.resolverId('GetUserById', {
+		id: S.number,
+		result: UserDbo,
+		resultId: (_) => _.id,
+		run: (ids) => sql`SELECT * FROM users WHERE id IN ${sql(ids)}`,
+	});
+
+	const getUserById = (id: number) =>
+		Effect.gen(function* (_) {
+			const user = yield* _(
+				GetById.execute(id).pipe(Effect.map(Option.map((p) => new UserDbo(p))))
+			);
+
+			return user;
+		});
+
+	return { getUserById };
 });
 
-const MigratorLive = Layer.provide(
-	SqliteLive,
-	Migrator.makeLayer({
-		loader: Migrator.fromDisk(`${__dirname}/migrations`),
-		schemaDirectory: `${__dirname}/migrations`,
-	})
-);
+export class UserRepro extends Context.Tag('@context/UserRepro')<
+	UserRepro,
+	Effect.Effect.Success<typeof make>
+>() {
+	static Live = pipe(Layer.effect(UserRepro, make), Layer.provide(SqlLive));
+}
 
 const main = Effect.gen(function* (_) {
-	yield* _(Console.log('HELLO'));
+	const { getUserById } = yield* _(UserRepro);
+
+	const allUsers = yield* _(
+		Effect.all(
+			pipe(
+				[1, 2, 1],
+				ReadonlyArray.map((id) => getUserById(id))
+			),
+			{ batching: false }
+		)
+	);
+
+	console.log(allUsers);
 
 	return null;
 });
 
-const EnvLive = Layer.mergeAll(SqliteLive, MigratorLive);
-
-const program = pipe(main, Effect.provide(EnvLive));
+const program = pipe(main, Effect.provide(UserRepro.Live));
 
 Effect.runPromiseExit(program).then((result) => {
 	Exit.match(result, {
